@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Login</title>
+<style>
+        body { font-family: Arial; max-width: 400px; margin: 100px auto; padding: 20px; }
+        input { display: block; width: 100%; padding: 8px; margin: 8px 0; box-sizing: border-box; }
+        button { background: #1E2761; color: white; padding: 10px 20px; border: none; cursor: pointer; width: 100%; }
+        .error { color: red; }
+</style>
+</head>
+<body>
+<h2>Task Manager — Login</h2>
+ 
+
+<form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+<button type="submit">Login</button>
+</form>
+ 
+    {% if form.errors %}
+<p class="error">Wrong username or password. Try again.</p>
+    {% endif %}
+</body>
+</html>

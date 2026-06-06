@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>My Tasks</title>
+<style>
+        body { font-family: Arial; max-width: 600px; margin: 50px auto; padding: 20px; }
+        .task { background: #EEF3FF; padding: 10px; margin: 8px 0; border-radius: 4px; }
+        a { color: #1E2761; }
+</style>
+</head>
+<body>
+<h2>Welcome, {{ user.username }}!</h2>
+<p><a href="/accounts/logout/">Logout</a></p>
+ 
+    <h3>Your Tasks:</h3>
+ 
+    <!-- Loop through tasks — we'll learn this properly in Week 7 -->
+    {% for task in tasks %}
+<div class="task">
+<strong>{{ task.title }}</strong> — {{ task.status }}
+</div>
+    {% empty %}
+<p>You have no tasks yet.</p>
+    {% endfor %}
+</body>
+</html>
