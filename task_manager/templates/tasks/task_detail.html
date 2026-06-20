@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+ 
+{% block title %}{{ task.title }}{% endblock %}
+ 
+{% block content %}
+<div class="detail-header">
+<a href="{% url 'task_list' %}" class="back-link">← Back to list</a>
+<h1>{{ task.title }}</h1>
+<span class="badge badge-{{ task.status }}">{{ task.status }}</span>
+</div>
+ 
+    <div class="detail-card">
+<p><strong>Description:</strong></p>
+<p>{{ task.description|default:"No description provided." }}</p>
+ 
+        <p><strong>Created:</strong> {{ task.created_at|date:"d M Y" }}</p>
+<p><strong>Last updated:</strong> {{ task.updated_at|date:"d M Y" }}</p>
+</div>
+ 
+    <div class="task-actions">
+<a href="{% url 'task_edit' task.pk %}" class="btn btn-primary">Edit</a>
+<a href="{% url 'task_delete' task.pk %}" class="btn btn-danger">Delete</a>
+</div>
+{% endblock %}

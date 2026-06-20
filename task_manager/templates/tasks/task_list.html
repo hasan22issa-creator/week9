@@ -1,26 +1,46 @@
-<!DOCTYPE html>
-<html>
-<head>
-<title>My Tasks</title>
-<style>
-        body { font-family: Arial; max-width: 600px; margin: 50px auto; padding: 20px; }
-        .task { background: #EEF3FF; padding: 10px; margin: 8px 0; border-radius: 4px; }
-        a { color: #1E2761; }
-</style>
-</head>
-<body>
-<h2>Welcome, {{ user.username }}!</h2>
-<p><a href="/accounts/logout/">Logout</a></p>
+{% extends "base.html" %}
  
-    <h3>Your Tasks:</h3>
+{% block title %}My Tasks{% endblock %}
  
-    <!-- Loop through tasks — we'll learn this properly in Week 7 -->
-    {% for task in tasks %}
-<div class="task">
-<strong>{{ task.title }}</strong> — {{ task.status }}
+{% block content %}
+<div class="page-header">
+<h1>My Tasks</h1>
+<a href="{% url 'task_create' %}" class="btn btn-primary">+ New Task</a>
 </div>
-    {% empty %}
-<p>You have no tasks yet.</p>
-    {% endfor %}
-</body>
-</html>
+ 
+    <!-- Filter buttons -->
+<div class="filters">
+<a href="{% url 'task_list' %}" class="btn {% if not status_filter %}btn-active{% endif %}">All</a>
+<a href="?status=open" class="btn {% if status_filter == 'open' %}btn-active{% endif %}">Open</a>
+<a href="?status=in-progress" class="btn {% if status_filter == 'in-progress' %}btn-active{% endif %}">In Progress</a>
+<a href="?status=done" class="btn {% if status_filter == 'done' %}btn-active{% endif %}">Done</a>
+</div>
+ 
+    <!-- Task list -->
+    {% if tasks %}
+<div class="task-list">
+            {% for task in tasks %}
+<div class="task-card status-{{ task.status }}">
+<div class="task-card-header">
+<a href="{% url 'task_detail' task.pk %}">
+<strong>{{ task.title }}</strong>
+</a>
+<span class="badge badge-{{ task.status }}">{{ task.status }}</span>
+</div>
+                    {% if task.description %}
+<p class="task-desc">{{ task.description|truncatechars:80 }}</p>
+                    {% endif %}
+<div class="task-actions">
+<a href="{% url 'task_edit' task.pk %}" class="btn btn-sm">Edit</a>
+<a href="{% url 'task_delete' task.pk %}" class="btn btn-sm btn-danger">Delete</a>
+</div>
+</div>
+            {% endfor %}
+</div>
+    {% else %}
+<div class="empty-state">
+<p>No tasks yet.</p>
+<a href="{% url 'task_create' %}" class="btn btn-primary">Create your first task</a>
+</div>
+    {% endif %}
+{% endblock %}

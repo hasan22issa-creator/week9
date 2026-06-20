@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+ 
+{% block title %}{{ action }} Task{% endblock %}
+ 
+{% block content %}
+<div class="form-page">
+<h1>{{ action }} Task</h1>
+ 
+        <form method="post">
+<!-- CSRF token — Django requires this on every form for security -->
+<!-- It prevents other websites from submitting forms on your behalf -->
+            {% csrf_token %}
+ 
+            <!-- Render each form field with its label and input -->
+            {% for field in form %}
+<div class="form-group">
+<label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.errors %}
+<span class="form-error">{{ field.errors.0 }}</span>
+                    {% endif %}
+</div>
+            {% endfor %}
+ 
+            <div class="form-buttons">
+<button type="submit" class="btn btn-primary">{{ action }} Task</button>
+<a href="{% url 'task_list' %}" class="btn">Cancel</a>
+</div>
+</form>
+</div>
+{% endblock %}
