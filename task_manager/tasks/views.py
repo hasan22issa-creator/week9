@@ -1,110 +1,91 @@
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.views.generic import (
+    ListView, DetailView, CreateView, UpdateView, DeleteView
+)
+from django.urls import reverse_lazy
 from .models import Task
 from .forms import TaskForm
  
  
-# Every view here has @login_required
-# If the user is not logged in, Django sends them to /accounts/login/
-# request.user = the person who is currently logged in
- 
+# LoginRequiredMixin = the class-based version of @login_required
+# It must always be the FIRST thing in the class definition
  
 # ── TASK LIST ──
-@login_required
-def task_list(request):
-    # Only show tasks that belong to the logged-in user
-    tasks = Task.objects.filter(owner=request.user)
+class TaskListView(LoginRequiredMixin, ListView):
+    model = Task
+    template_name = "tasks/task_list.html"
+    context_object_name = "tasks"  # what the template calls the list
  
-    # You can also filter by status using a URL parameter
-    # e.g. /tasks/?status=open
-    status_filter = request.GET.get("status")
-    if status_filter:
-        tasks = tasks.filter(status=status_filter)
+    def get_queryset(self):
+        # Only return tasks owned by the logged-in user
+        # This method replaces Task.objects.filter(owner=request.user)
+        queryset = Task.objects.filter(owner=self.request.user)
  
-    # render() takes 3 things:
-    # 1. the request
-    # 2. the template to use
-    # 3. a dictionary of data to pass to the template (context)
-    return render(request, "tasks/task_list.html", {
-        "tasks": tasks,
-        "status_filter": status_filter,
-    })
+        # Optional status filter from URL: /tasks/?status=open
+        status = self.request.GET.get("status")
+        if status:
+            queryset = queryset.filter(status=status)
+        return queryset
+ 
+    def get_context_data(self, **kwargs):
+        # Add extra data to the template context
+        context = super().get_context_data(**kwargs)
+        context["status_filter"] = self.request.GET.get("status")
+        return context
  
  
 # ── TASK DETAIL ──
-@login_required
-def task_detail(request, pk):
-    # get_object_or_404 = get the task, or show a 404 page if it doesn't exist
-    # We also check owner=request.user so users can't see each other's tasks
-    task = get_object_or_404(Task, pk=pk, owner=request.user)
+class TaskDetailView(LoginRequiredMixin, DetailView):
+    model = Task
+    template_name = "tasks/task_detail.html"
+    context_object_name = "task"
  
-    return render(request, "tasks/task_detail.html", {
-        "task": task,
-    })
+    def get_queryset(self):
+        # Only allow users to see their own tasks
+        return Task.objects.filter(owner=self.request.user)
  
  
 # ── CREATE TASK ──
-@login_required
-def task_create(request):
-    # When the user visits /tasks/create/ for the first time = GET request
-    # Show them an empty form
+class TaskCreateView(LoginRequiredMixin, CreateView):
+    model = Task
+    form_class = TaskForm
+    template_name = "tasks/task_form.html"
+    success_url = reverse_lazy("task_list")  # where to go after saving
  
-    # When they fill it in and click submit = POST request
-    # Save the task and redirect to the list
+    def form_valid(self, form):
+        # Set the owner before saving — same as commit=False from Week 7
+        form.instance.owner = self.request.user
+        return super().form_valid(form)
  
-    if request.method == "POST":
-        # request.POST contains all the form data the user submitted
-        form = TaskForm(request.POST)
-        if form.is_valid():
-            # Don't save to DB yet — we need to set the owner first
-            task = form.save(commit=False)
-            task.owner = request.user  # set the owner to the logged-in user
-            task.save()
-            return redirect("task_list")  # go back to the list after saving
-    else:
-        # GET request — show an empty form
-        form = TaskForm()
- 
-    return render(request, "tasks/task_form.html", {
-        "form": form,
-        "action": "Create",  # used in the template to say "Create Task"
-    })
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["action"] = "Create"
+        return context
  
  
 # ── EDIT TASK ──
-@login_required
-def task_edit(request, pk):
-    # Same idea as create, but we pre-fill the form with existing data
-    task = get_object_or_404(Task, pk=pk, owner=request.user)
+class TaskUpdateView(LoginRequiredMixin, UpdateView):
+    model = Task
+    form_class = TaskForm
+    template_name = "tasks/task_form.html"
  
-    if request.method == "POST":
-        # instance=task tells Django which task to update
-        form = TaskForm(request.POST, instance=task)
-        if form.is_valid():
-            form.save()
-            return redirect("task_detail", pk=task.pk)
-    else:
-        # Pre-fill form with the task's current data
-        form = TaskForm(instance=task)
+    def get_queryset(self):
+        return Task.objects.filter(owner=self.request.user)
  
-    return render(request, "tasks/task_form.html", {
-        "form": form,
-        "action": "Edit",
-        "task": task,
-    })
+    def get_success_url(self):
+        return reverse_lazy("task_detail", kwargs={"pk": self.object.pk})
+ 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["action"] = "Edit"
+        return context
  
  
 # ── DELETE TASK ──
-@login_required
-def task_delete(request, pk):
-    task = get_object_or_404(Task, pk=pk, owner=request.user)
+class TaskDeleteView(LoginRequiredMixin, DeleteView):
+    model = Task
+    template_name = "tasks/task_confirm_delete.html"
+    success_url = reverse_lazy("task_list")
  
-    if request.method == "POST":
-        # Only actually delete when the user confirms (POST)
-        task.delete()
-        return redirect("task_list")
- 
-    # GET request — show a confirmation page first
-    return render(request, "tasks/task_confirm_delete.html", {
-        "task": task,
-    })
+    def get_queryset(self):
+        return Task.objects.filter(owner=self.request.user)
