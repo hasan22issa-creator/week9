@@ -17,14 +17,16 @@ Including another URLconf
 
 from django.contrib import admin
 from django.urls import path, include
- 
+from django.views.generic import RedirectView
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
  
 urlpatterns = [
     path("admin/", admin.site.urls),
- 
-    # This one line gives us /accounts/login/ and /accounts/logout/ for free
-    # Django handles everything — we don't need to write the logic ourselves
     path("accounts/", include("django.contrib.auth.urls")),
- 
     path("tasks/", include("tasks.urls")),
+    path("", RedirectView.as_view(url="/tasks/")),
+ 
+    # JWT endpoints — get a token and refresh it
+    path("api/token/",         TokenObtainPairView.as_view(),  name="token_obtain_pair"),
+    path("api/token/refresh/", TokenRefreshView.as_view(),     name="token_refresh"),
 ]
